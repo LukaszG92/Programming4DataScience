@@ -9,7 +9,7 @@ Write a Python program that reads a text from a file and performs the following 
 from collections import Counter
 
 # Apriamo il file di testo e mettiamo il suo contenuto in una stringa.
-with open('dummyText.txt', 'r') as f:
+with open('dummy_text.txt', 'r') as f:
     text = f.read()
 
 # Tokenizziamo il testo in una lista di parole
