@@ -1,8 +1,6 @@
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
 
-df = pd.read_csv('datasets/speech-a.tsv', sep='\t', header=None, names=['author', 'code', 'text'])
-
 sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
 sparql.addCustomHttpHeader("User-Agent", "ProgrammingForDataScience/1.0 (Contact: lukasz.gajewski15@gmail.com)")
 
@@ -14,7 +12,6 @@ author_mapping = {
 }
 
 def build_query(name: str) -> str:
-    """Builds the SPARQL query for a given name."""
     return f"""
     SELECT ?personLabel ?birthDate ?deathDate ?nationalityLabel ?positionLabel
     WHERE {{
@@ -37,7 +34,6 @@ def build_query(name: str) -> str:
     """
 
 def parse_result(result: dict) -> dict:
-    """Parses the result dictionary into a structured format."""
     return {
         'date_of_birth': result.get('birthDate', {}).get('value', None),
         'date_of_death': result.get('deathDate', {}).get('value', None),
@@ -46,7 +42,6 @@ def parse_result(result: dict) -> dict:
     }
 
 def get_author_info(name: str) -> dict:
-    """Fetches information about an author from Wikidata."""
     print(f'Fetching author info for {name}')
     query = build_query(name)
     sparql.setQuery(query)
@@ -65,14 +60,13 @@ def get_author_info(name: str) -> dict:
         'position': None
     }
 
-# Map the author names to full names
-df['author'] = df['author'].map(author_mapping)
+def author_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
+    input_data['author'] = input_data['author'].map(author_mapping)
 
-# Fetch author information and expand into separate columns
-author_info = df['author'].map(get_author_info)
-author_info_df = pd.DataFrame(author_info.tolist())
+    author_info = input_data['author'].map(get_author_info)
+    author_info_df = pd.DataFrame(author_info.tolist())
 
-# Merge the new information into the original DataFrame
-df = pd.concat([df, author_info_df], axis=1)
+    output_data = pd.concat([input_data, author_info_df], axis=1)
 
-df.to_csv('datasets/wikidata_author_enrichment.csv', index=False)
+    return output_data
+
