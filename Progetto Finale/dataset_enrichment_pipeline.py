@@ -7,12 +7,19 @@ from speech_based_feature_enrichment import speech_based_feature_enrichment
 
 from narrative_enrichment import narrative_enrichment
 
-df = pd.read_csv('datasets/speech-a.tsv', sep='\t', header=None, names=['author', 'code', 'text'])
+df = pd.read_csv('datasets/speech-a.tsv', sep='\t', header=None, names=['author', 'code', 'text'])[:1]
 
+print("Starting author enrichment")
 author_df = author_enrichment(df)
+
+print("Starting text metadata enrichment")
 speech_metadata_df = text_metadata_enrichment(author_df)
+
+print("Starting text-based feature enrichment")
 text_based_df = text_based_enrichment(speech_metadata_df)
-speech_based_df = speech_based_feature_enrichment(text_based_df)
+
+print("Starting speech-based feature enrichment")
+speech_based_df = speech_based_feature_enrichment(speech_metadata_df)
 
 speech_based_df.to_csv('datasets/speech-b.csv', index=False)
 
