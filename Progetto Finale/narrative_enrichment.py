@@ -1,7 +1,8 @@
+import os
 from groq import Groq
 import pandas as pd
 
-api_key = ""
+api_key = os.environ['GROQ_KEY']
 client = Groq(api_key=api_key)
 
 def get_narrative(text: str) -> dict:
