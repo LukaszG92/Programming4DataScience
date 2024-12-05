@@ -106,7 +106,7 @@ def get_sentiment(text: str, window_size=512, overlap=384, batch_size=32) -> Uni
     return None
 
 
-def get_emotions(text, window_size=512, overlap=384, batch_size=32):
+def get_emotions(text: str, window_size=512, overlap=384, batch_size=32) -> dict:
     encoded = emotion_tokenizer(
         text,
         return_tensors="pt",

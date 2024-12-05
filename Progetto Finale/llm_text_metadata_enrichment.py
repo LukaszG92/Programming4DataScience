@@ -4,7 +4,7 @@ import pandas as pd
 api_key = ""
 client = Groq(api_key=api_key)
 
-def analyze_text(text: str):
+def analyze_text(text: str) -> dict:
     print(f"Analyzing text: {text}")
     prompt = f"""
     Analyze the metadata related to the provided speech. 

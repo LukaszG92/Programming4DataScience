@@ -4,7 +4,7 @@ import pandas as pd
 api_key = ""
 client = Groq(api_key=api_key)
 
-def get_narrative(text: str):
+def get_narrative(text: str) -> dict:
     prompt = f"""
     Analyze the provided text and generate a brief narrative summary emphasizing the main topics of the speech.  
     Return the result in JSON format with the following structure:  
