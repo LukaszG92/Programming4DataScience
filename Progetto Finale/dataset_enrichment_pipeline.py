@@ -19,7 +19,7 @@ print("Starting text-based feature enrichment")
 text_based_df = text_based_enrichment(speech_metadata_df)
 
 print("Starting speech-based feature enrichment")
-speech_based_df = speech_based_feature_enrichment(speech_metadata_df)
+speech_based_df = speech_based_feature_enrichment(text_based_df)
 
 speech_based_df.to_csv('datasets/speech-b.csv', index=False)
 
