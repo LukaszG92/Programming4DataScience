@@ -79,9 +79,9 @@ def get_keywords(text, window_size=4096, stride=3584):
 
     sorted_keywords = sorted(keyword_scores.items(), key=lambda x: x[1])
     return {
-        "keyword_1": sorted_keywords[0],
-        "keyword_2": sorted_keywords[1],
-        "keyword_3": sorted_keywords[2],
+        "keyword_1": sorted_keywords[0][0],
+        "keyword_2": sorted_keywords[1][0],
+        "keyword_3": sorted_keywords[2][0],
     }
 
 
