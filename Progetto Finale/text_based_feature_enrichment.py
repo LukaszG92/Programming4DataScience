@@ -2,9 +2,10 @@ from typing import Union
 
 import spacy
 import pandas as pd
-import numpy as np
-from tqdm import tqdm
-import textdescriptives as td
+from gensim.corpora.dictionary import Dictionary
+from gensim.models import LdaModel
+from collections import defaultdict
+import spacy
 from spacy.tokens import Token
 from textdescriptives.extractors import extract_df
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -50,7 +51,37 @@ def dispatcher(token: Token, verbs: dict, nouns: dict, adjectives: dict) -> None
         adjectives[token_lemma] = adjectives.get(token_lemma, 0) + 1
 
 
-def get_words_metrics(text: str) -> dict:
+def extract_topic_modeling(doc) -> dict:
+    removal = {'ADV', 'PRON', 'CCONJ', 'PUNCT', 'PART', 'DET', 'ADP', 'SPACE', 'NUM', 'SYM'}
+
+    df = pd.Series()
+
+    df['tokens'] = [token.lemma_.lower() for token in doc if token.pos_ not in removal and not token.is_stop and token.is_alpha]
+    df['tokens'] = df['tokens'].map(lambda x: x if x is not None and len(x) > 0 else [])
+
+    dictionary = Dictionary(df['tokens'])
+    corpus = [dictionary.doc2bow(doc) for doc in df['tokens']]
+    num_topics = 4
+    lda_model = LdaModel(corpus=corpus, id2word=dictionary, iterations=150, num_topics=num_topics, passes=10)
+
+    topic_words = {idx: [word for word, _ in lda_model.show_topic(idx, topn=5)] for idx in range(num_topics)}
+
+    dominant_topics = []
+    for doc in df['tokens']:
+        bow = dictionary.doc2bow(doc)
+        topic_distribution = lda_model[bow]
+        dominant_topic = max(topic_distribution, key=lambda x: x[1])[0]
+        dominant_topics.append(dominant_topic)
+
+    return {
+        "topic" : dominant_topics,
+        "topic_keyword_1": topic_words[0],
+        "topic_keyword_2": topic_words[1],
+        "topic_keyword_3": topic_words[2],
+    }
+
+
+def get_words_metrics_and_topics(text: str) -> dict:
     doc = nlp(text)
 
     verbs = {}
@@ -72,7 +103,12 @@ def get_words_metrics(text: str) -> dict:
         "most_common_adjective": most_common_adjective,
     }
 
-    return pos_counts
+    topic_dict = extract_topic_modeling(doc)
+
+    return {
+        **pos_counts,
+        **topic_dict
+    }
 
 
 def get_sentiment(text: str, window_size=512, overlap=384, batch_size=32) -> Union[str, None]:
@@ -148,8 +184,8 @@ def get_emotions(text: str, window_size=512, overlap=384, batch_size=32) -> dict
 
 
 def text_based_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
-    pos_counts = input_data['text'].map(get_words_metrics)
-    pos_counts_df = pd.DataFrame(pos_counts.tolist())
+    word_metrics_and_topics = input_data['text'].map(get_words_metrics_and_topics)
+    word_metrics_and_topics_df = pd.DataFrame(word_metrics_and_topics.tolist())
 
     descriptive_df = get_descriptive_and_readability(input_data["text"])
 
@@ -161,6 +197,6 @@ def text_based_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
     emotion = input_data['text'].map(get_emotions)
     emotion_df = pd.DataFrame(emotion.tolist())
 
-    output_data = pd.concat([input_data, pos_counts_df, descriptive_df, sentiment_df, emotion_df], axis=1)
+    output_data = pd.concat([input_data, word_metrics_and_topics_df, descriptive_df, sentiment_df, emotion_df], axis=1)
 
     return output_data
