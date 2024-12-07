@@ -1,13 +1,14 @@
-from gensim.corpora.dictionary import Dictionary
-from gensim.models import LdaMulticore
-from collections import defaultdict
 import os
 from groq import Groq
+import yake
 import pandas as pd
-import spacy
+from tqdm import tqdm
+from transformers import AutoTokenizer
 
 api_key = os.environ['GROQ_KEY']
 client = Groq(api_key=api_key)
+
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 
 def summarize_text(text: str) -> dict:
     print(f"Analyzing text: {text}")
@@ -46,52 +47,51 @@ def summarize_text(text: str) -> dict:
     return result
 
 
+def create_sliding_windows(text, window_size, stride):
+    encoded = tokenizer(
+        text,
+        truncation=True,
+        padding="max_length",
+        max_length=window_size,
+        stride=stride,
+        return_overflowing_tokens=True,
+        return_tensors="pt",
+    )
+
+    windows = encoded["input_ids"]
+    return windows
+
+
+def get_keywords(text, window_size=4096, stride=3584):
+    yake_extractor = yake.KeywordExtractor(lan="en", n=2, top=3)
+
+    windows = create_sliding_windows(text, window_size, stride)
+
+    all_keywords = []
+    for window_tensor in windows:
+        window = tokenizer.decode(window_tensor, skip_special_tokens=True)
+        keywords = yake_extractor.extract_keywords(window)
+        all_keywords.extend(keywords)
+
+    keyword_scores = {}
+    for word, score in all_keywords:
+        keyword_scores[word] = min(score, keyword_scores.get(word, float('inf')))
+
+    sorted_keywords = sorted(keyword_scores.items(), key=lambda x: x[1])
+    return {
+        "keyword_1": sorted_keywords[0],
+        "keyword_2": sorted_keywords[1],
+        "keyword_3": sorted_keywords[2],
+    }
+
+
 def speech_based_feature_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
     summarized_speech = input_data['text'].map(summarize_text)
     summarized_speech_df = pd.DataFrame(summarized_speech.tolist())
 
-    output_data = pd.concat([input_data, summarized_speech_df], axis=1)
+    keywords = input_data['text'].map(get_keywords)
+    keywords_df = pd.DataFrame(keywords.tolist())
+
+    output_data = pd.concat([input_data, summarized_speech_df, keywords_df], axis=1)
 
     return output_data
-
-
-def extract_topic_modeling(df: pd.DataFrame, text_column: str) -> pd.DataFrame:
-    nlp = spacy.load("en_core_web_md")
-    removal = {'ADV', 'PRON', 'CCONJ', 'PUNCT', 'PART', 'DET', 'ADP', 'SPACE', 'NUM', 'SYM'}
-
-    def preprocess_text(text: str) -> list[str]:
-        doc = nlp(text)
-        return [token.lemma_.lower() for token in doc if token.pos_ not in removal and not token.is_stop and token.is_alpha]
-
-    df['tokens'] = df[text_column].apply(preprocess_text)
-    df = df[df['tokens'].map(len) > 0]
-
-    dictionary = Dictionary(df['tokens'])
-    dictionary.filter_extremes(no_below=5, no_above=0.5, keep_n=1000)
-
-    corpus = [dictionary.doc2bow(doc) for doc in df['tokens']]
-    topic_ids = [
-        "Reform", "Leadership", "Security", "Economy", "Energy", "Healthcare",
-        "Education", "Justice", "Diplomacy", "Taxation", "Infrastructure",
-        "Technology", "Poverty", "Conflict", "Rights", "Democracy", "Crisis",
-        "Innovation", "Freedom", "Election", "Climate", "War", "Nationalism", "Immigration"
-    ]
-
-    num_topics = len(topic_ids)
-    lda_model = LdaMulticore(corpus=corpus, id2word=dictionary, iterations=150, num_topics=num_topics, workers=4, passes=10)
-
-    topic_words = {idx: [word for word, _ in lda_model.show_topic(idx, topn=5)] for idx in range(num_topics)}
-    custom_topic_ids = {idx: topic_ids[idx] for idx in range(len(topic_ids))}
-
-    dominant_topics = []
-    for doc in df['tokens']:
-        bow = dictionary.doc2bow(doc)
-        topic_distribution = lda_model[bow]
-        dominant_topic = max(topic_distribution, key=lambda x: x[1])[0]
-        dominant_topics.append(dominant_topic)
-
-    df['dominant_topic'] = dominant_topics
-    df['dominant_topic_custom'] = df['dominant_topic'].map(custom_topic_ids)
-    df['topic_keywords_custom'] = df['dominant_topic'].map(lambda x: ', '.join(topic_words[x]) if x is not None else "N/A")
-    
-    return df
