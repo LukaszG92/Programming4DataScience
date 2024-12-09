@@ -4,10 +4,11 @@ from wikidata_author_enrichment import author_enrichment
 from llm_text_metadata_enrichment import text_metadata_enrichment
 from text_based_feature_enrichment import text_based_enrichment
 from speech_based_feature_enrichment import speech_based_feature_enrichment
-
 from narrative_enrichment import narrative_enrichment
+from propaganda_span_enrichment import propaganda_span_enrichment
 
 df = pd.read_csv('datasets/speech-a.tsv', sep='\t', header=None, names=['author', 'code', 'text'])[:1]
+df = df.reset_index()
 
 print("Starting author enrichment")
 author_df = author_enrichment(df)
@@ -21,11 +22,10 @@ text_based_df = text_based_enrichment(speech_metadata_df)
 print("Starting speech-based feature enrichment")
 speech_based_df = speech_based_feature_enrichment(text_based_df)
 
-speech_based_df.to_csv('datasets/speech-b.csv', index=False)
+print("Starting narrative enrichment")
+narrative_df = narrative_enrichment(speech_based_df)
 
-"""Ultimi passi della pipeline, attualmente commentati in attesa dei precedenti
-narrative_df = narrative_enrichment(propaganda_features_df)
+print("Starting propaganda span enrichment")
 propaganda_span_df = propaganda_span_enrichment(narrative_df)
 
-propaganda_span_df.to_csv('datasets/speech-b.csv', index=False)
-"""
+propaganda_span_df.to_csv('datasets/speech-b.csv')
