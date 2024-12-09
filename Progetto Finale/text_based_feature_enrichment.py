@@ -1,7 +1,7 @@
 from typing import Union
 import pandas as pd
 from gensim.corpora.dictionary import Dictionary
-from gensim.models import LdaModel
+from gensim.models import LdaMulticore
 import spacy
 from spacy.tokens import Token
 from textdescriptives.extractors import extract_df
@@ -52,8 +52,7 @@ def get_topic(text_column: pd.Series) -> pd.DataFrame:
     corpus = [dictionary.doc2bow(doc) for doc in df['tokens']]
 
     num_topics = 4
-    lda_model = LdaModel(corpus=corpus, id2word=dictionary, iterations=150, num_topics=num_topics, passes=10)
-
+    lda_model = LdaMulticore(corpus=corpus, id2word=dictionary, iterations=150, num_topics=num_topics, workers = 2, passes=10)
     topic_words = {idx: [word for word, _ in lda_model.show_topic(idx, topn=5)] for idx in range(num_topics)}
 
     dominant_topics = []
