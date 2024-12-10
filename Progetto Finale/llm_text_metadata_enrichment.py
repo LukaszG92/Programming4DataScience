@@ -36,18 +36,24 @@ def analyze_text(text: str) -> dict:
     response = response[response.find("{"):response.rfind("}") + 1]
     try:
         result = eval(response)
+        values = result.values()
+        result = {
+            "date of the speech": values[0],
+            "location of the speech": values[1],
+            "event of the speech": values[2]
+        }
+
     except Exception as e:
         result = {
             "date of the speech": None,
             "location of the speech": None,
             "event of the speech": None,
-            "error": str(e)
         }
+
     return result
 
 def text_metadata_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
-    text_metadata = input_data['text'].map(analyze_text)
-    text_metadata_df = pd.DataFrame(text_metadata.tolist())
+    text_metadata_df = pd.DataFrame(list(input_data['text'].map(analyze_text)))
 
     output_data = pd.concat([input_data, text_metadata_df], axis=1)
 

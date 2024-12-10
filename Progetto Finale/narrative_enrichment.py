@@ -6,18 +6,26 @@ api_key = os.environ['GROQ_KEY']
 client = Groq(api_key=api_key)
 
 def get_narrative(text: str) -> dict:
+    if len(text.split()) <= 4700:
+        model = 'llama-3.3-70b-versatile'
+    elif len(text.split()) <= 10700:
+        model = 'llama3-groq-70b-8192-tool-use-preview'
+    else:
+        model = 'llama-3.1-8b-instant'
+
     prompt = f"""
-    Analyze the provided text and generate a brief narrative summary emphasizing the main topics of the speech.  
-    Return the result in JSON format with the following structure:  
-    {{  
-        "narrative": "value"  
-    }}  
+    Analyze the following text and provide a detailed explanation of its narrative scheme, including the underlying themes, emotions, and storytelling framework.
+    Identify whether it aligns with any classical or modern narrative archetypes (e.g., hero’s journey, rise and fall, transformation) and explain how the text develops its core message through its narrative structure.
+    Additionally, suggest contextual or symbolic elements that enhance the understanding of the story being told.
     
-    - The "narrative" field should be a concise string (no more than 1-2 sentences) that highlights the primary topics and key points discussed in the text.  
-    - If no clear narrative can be extracted, return "None".  
-    - Ensure that the response is strictly in the specified JSON format, with no extra text.  
+    Return the result as a JSON with the following structure:
+    {{
+         'narrative archetype': 'value'
+    }}
+
+        - Ensure that the response is strictly the JSON format, without any extra text
     
-    Text: {text[:5900]}
+    Text:  {text}
     """
 
     chat_completion = client.chat.completions.create(
@@ -27,11 +35,11 @@ def get_narrative(text: str) -> dict:
                 "content": prompt,
             }
         ],
-        model="llama-3.1-70b-versatile",
+        model=model,
     )
 
     response = chat_completion.choices[0].message.content.strip()
-    response = response[response.find("{"):response.rfind("}") + 1]
+    response = response[response.find("{"):response.find("}") + 1]
     print(response)
     try:
         result = eval(response)
@@ -46,8 +54,7 @@ def get_narrative(text: str) -> dict:
 
 
 def narrative_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
-    text_narrative = input_data['text'].map(get_narrative)
-    text_narrative_df = pd.DataFrame(text_narrative.tolist())
+    text_narrative_df = pd.DataFrame(list(input_data['text'].map(get_narrative)))
 
     output_data = pd.concat([input_data, text_narrative_df], axis=1)
 

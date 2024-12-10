@@ -1,4 +1,5 @@
 import pandas as pd
+import time
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
@@ -52,19 +53,23 @@ def get_author_info(name: str) -> dict:
             result = results['results']['bindings'][0]
             return parse_result(result)
     except Exception as e:
-        print(f"Error retrieving data for author {name}: {e}")
-    return {
-        'date_of_birth': None,
-        'date_of_death': None,
-        'nationality': None,
-        'position': None
-    }
+        return {
+            'date_of_birth': None,
+            'date_of_death': None,
+            'nationality': None,
+            'position': None
+        }
 
 def author_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
+    print("Mapping del nome completo degli autori...")
+    start_time = time.time()
     input_data['author'] = input_data['author'].map(author_mapping)
+    print(f"Nomi completi mappati in {time.time() - start_time:.2f} secondi.\n")
 
-    author_info = input_data['author'].map(get_author_info)
-    author_info_df = pd.DataFrame(author_info.tolist())
+    print("Query WikiData per le informazioni sugli autori...")
+    start_time = time.time()
+    author_info_df = pd.DataFrame(list(input_data['author'].map(get_author_info)))
+    print(f"Query completate in {time.time() - start_time:.2f} secondi.\n")
 
     output_data = pd.concat([input_data, author_info_df], axis=1)
 

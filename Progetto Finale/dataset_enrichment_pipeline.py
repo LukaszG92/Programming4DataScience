@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 
 from wikidata_author_enrichment import author_enrichment
@@ -10,22 +11,34 @@ from propaganda_span_enrichment import propaganda_span_enrichment
 df = pd.read_csv('datasets/speech-a.tsv', sep='\t', header=None, names=['author', 'code', 'text'])[:1]
 df = df.reset_index()
 
-print("Starting author enrichment")
+print("Iniziando l'arricchimento con i dati dell'autore...")
+start_time = time.time()
 author_df = author_enrichment(df)
+print(f"Dataset arricchito con i dati dell'autore in {time.time() - start_time:.2f} secondi.\n")
 
-print("Starting text metadata enrichment")
+print("Iniziando l'arricchimento con i metadati del discorso...")
+start_time = time.time()
 speech_metadata_df = text_metadata_enrichment(author_df)
+print(f"Dataset arricchito con i metadati del discorso in {time.time() - start_time:.2f} secondi.\n")
 
-print("Starting text-based feature enrichment")
+print("Iniziando l'arricchimento con i dati basati sul testo...")
+start_time = time.time()
 text_based_df = text_based_enrichment(speech_metadata_df)
+print(f"Dataset arricchito con i dati basati sul testo in {time.time() - start_time:.2f} secondi.\n")
 
-print("Starting speech-based feature enrichment")
+print("Iniziando l'arricchimento con i dati basati sul discorso...")
+start_time = time.time()
 speech_based_df = speech_based_feature_enrichment(text_based_df)
+print(f"Dataset arricchito con i dati basati sul discorso in {time.time() - start_time:.2f} secondi.\n")
 
-print("Starting narrative enrichment")
+print("Iniziando l'arricchimento con i dati riguardo la narrativa...")
+start_time = time.time()
 narrative_df = narrative_enrichment(speech_based_df)
+print(f"Dataset arricchito con i dati riguardo la narrativa in {time.time() - start_time:.2f} secondi.\n")
 
-print("Starting propaganda span enrichment")
+print("Iniziando l'arricchimento con gli span di propaganda..")
+start_time = time.time()
 propaganda_span_df = propaganda_span_enrichment(narrative_df)
+print(f"Dataset arricchito con gli span di propaganda in {time.time() - start_time:.2f} secondi.\n")
 
 propaganda_span_df.to_csv('datasets/speech-b.csv')

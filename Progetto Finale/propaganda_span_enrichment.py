@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import os
 from groq import Groq
@@ -133,6 +134,9 @@ def get_propaganda_spans(text: str):
 
 
 def propaganda_span_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
+
+    print("Individuazione degli span di propaganda...")
+    start_time = time.time()
     input_data['span_metadata'] = input_data['text'].apply(get_propaganda_spans)
 
     exploded_df = input_data.explode('span_metadata', ignore_index=True)
@@ -144,5 +148,6 @@ def propaganda_span_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
     final_df['span_index'] = final_df.groupby('index').cumcount()
 
     final_df.set_index(['index', 'span_index'], inplace=True)
+    print(f"Propaganda span individuati e dataset ristrutturato in {time.time() - start_time:.2f} secondi.\n")
 
     return final_df
