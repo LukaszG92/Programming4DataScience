@@ -5,6 +5,7 @@ from wikidata_author_enrichment import author_enrichment
 from llm_text_metadata_enrichment import text_metadata_enrichment
 from text_based_feature_enrichment import text_based_enrichment
 from speech_based_feature_enrichment import speech_based_feature_enrichment
+from propaganda_features_enrichment import propaganda_enrichment
 from narrative_enrichment import narrative_enrichment
 from propaganda_span_enrichment import propaganda_span_enrichment
 
@@ -31,9 +32,14 @@ start_time = time.time()
 speech_based_df = speech_based_feature_enrichment(text_based_df)
 print(f"Dataset arricchito con i dati basati sul discorso in {time.time() - start_time:.2f} secondi.\n")
 
+print("Iniziando l'arricchimento con i dati utili alla propaganda detection...")
+start_time = time.time()
+propaganda_df = propaganda_enrichment(speech_based_df)
+print(f"Dataset arricchito con i dati utili alla propaganda detection in {time.time() - start_time:.2f} secondi.\n")
+
 print("Iniziando l'arricchimento con i dati riguardo la narrativa...")
 start_time = time.time()
-narrative_df = narrative_enrichment(speech_based_df)
+narrative_df = narrative_enrichment(propaganda_df)
 print(f"Dataset arricchito con i dati riguardo la narrativa in {time.time() - start_time:.2f} secondi.\n")
 
 print("Iniziando l'arricchimento con gli span di propaganda..")
