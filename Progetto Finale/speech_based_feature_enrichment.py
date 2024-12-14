@@ -5,7 +5,7 @@ import yake
 import pandas as pd
 from transformers import AutoTokenizer
 
-api_key = os.getenv("GROQ_KEY", "il_tuo_token_groq")
+api_key = os.environ['GROQ_KEY']
 client = Groq(api_key=api_key)
 tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 yake_extractor = yake.KeywordExtractor(lan="en", n=2, top=3)
@@ -13,10 +13,8 @@ yake_extractor = yake.KeywordExtractor(lan="en", n=2, top=3)
 
 def summarize_text(text: str) -> dict:
     try:
-        if len(text.split()) <= 4700:
+        if len(text.split()) <= 5500:
             model = 'llama-3.3-70b-versatile'
-        elif len(text.split()) <= 10700:
-            model = 'llama3-groq-70b-8192-tool-use-preview'
         else:
             model = 'llama-3.1-8b-instant'
 
@@ -37,8 +35,11 @@ def summarize_text(text: str) -> dict:
         response = response[response.find("{"):response.find("}") + 1]
 
         result = eval(response)
-        return result
-    except Exception:
+        values = list(result.values())
+        return {
+            "abstract": values[0],
+        }
+    except Exception as e:
         return {"abstract": None}
 
 

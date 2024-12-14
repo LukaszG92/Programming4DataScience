@@ -6,25 +6,31 @@ api_key = os.environ['GROQ_KEY']
 client = Groq(api_key=api_key)
 
 def get_narrative(text: str) -> dict:
-    if len(text.split()) <= 4700:
+    if len(text.split()) <= 3800:
         model = 'llama-3.3-70b-versatile'
-    elif len(text.split()) <= 10700:
-        model = 'llama3-groq-70b-8192-tool-use-preview'
     else:
         model = 'llama-3.1-8b-instant'
 
     prompt = f"""
-    Analyze the following text and provide a detailed explanation of its narrative scheme, including the underlying themes, emotions, and storytelling framework.
-    Identify whether it aligns with any classical or modern narrative archetypes (e.g., hero’s journey, rise and fall, transformation) and explain how the text develops its core message through its narrative structure.
-    Additionally, suggest contextual or symbolic elements that enhance the understanding of the story being told.
+    Analyze the following text and provide its narrative archetype.
     
     Return the result as a JSON with the following structure:
     {{
          'narrative archetype': 'value'
     }}
 
-        - Ensure that the response is strictly the JSON format, without any extra text
-    
+    - Ensure that the response is strictly the JSON format, without any extra text
+    - The narrative archetype should be one of this:
+    {{
+        "Overcoming The Monster": "The protagonist battles a monstrous force threatening survival and represents a larger existential issue.",
+        "Voyage And Return": "The protagonist leaves home, encounters a challenging new world, and returns transformed.",
+        "Rags To Riches": "The protagonist rises from a low point to achieve empowerment and fulfillment.",
+        "The Quest": "The protagonist sets out to find an object or person, facing mounting challenges and making sacrifices.",
+        "Comedy": "A series of misunderstandings create conflict, eventually resolving happily.",
+        "Tragedy": "The protagonist’s flaw or mistake leads to their undoing and fall.",
+        "Rebirth": "The protagonist undergoes a redemptive journey leading to a hopeful outcome."
+    }}
+
     Text:  {text}
     """
 
@@ -39,17 +45,19 @@ def get_narrative(text: str) -> dict:
     )
 
     response = chat_completion.choices[0].message.content.strip()
-    response = response[response.find("{"):response.find("}") + 1]
-    print(response)
+    response = response[response.find("{"):response.rfind("}") + 1]
+
     try:
-        result = eval(response)
+        result_dict = eval(response)
+        values = list(result_dict.values())
+        result = {
+            'narrative': values[0],
+        }
     except Exception as e:
         result = {
-            "narrative": None,
-            "error": str(e)
+            "narrative": None
         }
 
-    print(result)
     return result
 
 

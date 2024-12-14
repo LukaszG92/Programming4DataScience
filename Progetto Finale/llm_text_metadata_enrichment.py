@@ -6,7 +6,6 @@ api_key = os.environ['GROQ_KEY']
 client = Groq(api_key=api_key)
 
 def analyze_text(text: str) -> dict:
-    print(f"Analyzing text: {text}")
     prompt = f"""
     Analyze the metadata related to the provided speech. 
     Return the result in JSON format with the following structure:
@@ -36,7 +35,7 @@ def analyze_text(text: str) -> dict:
     response = response[response.find("{"):response.rfind("}") + 1]
     try:
         result = eval(response)
-        values = result.values()
+        values = list(result.values())
         result = {
             "date of the speech": values[0],
             "location of the speech": values[1],
@@ -49,7 +48,6 @@ def analyze_text(text: str) -> dict:
             "location of the speech": None,
             "event of the speech": None,
         }
-
     return result
 
 def text_metadata_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
