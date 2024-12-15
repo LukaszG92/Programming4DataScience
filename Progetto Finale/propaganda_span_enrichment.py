@@ -9,7 +9,6 @@ client = Groq(api_key=api_key)
 def get_propaganda_spans(text: str):
     span_metadata = []
     for i in range(0, len(text), 5700):
-        print(f"Analyzing: {text[i:i+5700]}")
         prompt = f"""
         Search in this text the 2-3 most relevant propaganda slices, with the associated propaganda type.
         The result format have to be a JSON structured as follows, without any other addiction::
@@ -108,7 +107,7 @@ def get_propaganda_spans(text: str):
                     "content": prompt,
                 }
             ],
-            model="llama-3.1-70b-versatile",
+            model="llama-3.3-70b-versatile",
         )
 
         response = chat_completion.choices[0].message.content.strip()
@@ -134,7 +133,6 @@ def get_propaganda_spans(text: str):
 
 
 def propaganda_span_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
-
     print("Individuazione degli span di propaganda...")
     start_time = time.time()
     input_data['span_metadata'] = input_data['text'].apply(get_propaganda_spans)

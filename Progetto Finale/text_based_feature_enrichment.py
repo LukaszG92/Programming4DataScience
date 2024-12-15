@@ -60,7 +60,7 @@ def get_topic(text_column: pd.Series) -> pd.DataFrame:
     corpus = [dictionary.doc2bow(doc) for doc in output_df['tokens']]
 
     # Addestramento modello LDA
-    num_topics = 4
+    num_topics = 7
     lda_model = LdaMulticore(
         corpus=corpus,
         id2word=dictionary,
