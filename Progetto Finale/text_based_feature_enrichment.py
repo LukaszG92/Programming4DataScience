@@ -255,5 +255,6 @@ def text_based_enrichment(input_data: pd.DataFrame) -> pd.DataFrame:
     print(f"Topic estratti in {time.time() - start_time:.2f} secondi.")
 
     output_data = pd.concat([word_metrics_df, descriptive_df, sentiment_df, emotion_df, topics_df], axis=1)
+    output_data = output_data[output_data['n_sentences'] > 1]
 
     return output_data
