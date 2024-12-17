@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 
+# Importazione delle funzioni di arricchimento da moduli specifici
 from wikidata_author_enrichment import author_enrichment
 from llm_text_metadata_enrichment import text_metadata_enrichment
 from text_based_feature_enrichment import text_based_enrichment
@@ -9,7 +10,8 @@ from propaganda_features_enrichment import propaganda_enrichment
 from narrative_enrichment import narrative_enrichment
 from propaganda_span_enrichment import propaganda_span_enrichment
 
-df = pd.read_csv('datasets/speech-a.tsv', sep='\t', header=None, names=['author', 'code', 'text'])[:1]
+# Caricamento del dataset originale
+df = pd.read_csv('datasets/speech-a.tsv', sep='\t', header=None, names=['author', 'code', 'text'])
 df = df.reset_index()
 
 print("Iniziando l'arricchimento con i dati dell'autore...")
